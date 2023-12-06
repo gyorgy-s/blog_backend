@@ -9,13 +9,28 @@ from .models import Post, Comment
 
 def get_posts(num: int=0, page: int=1):
     with app.app_context():
-        posts = db.session.execute(
-            select(Post)
-            .order_by(Post.date.desc())
-            .limit(None)
-            .offset((page - 1) * num),
-            execution_options={"prebuffer_rows": True}
-        ).scalars().all()
+        if not num:
+            posts = db.session.execute(
+                select(Post)
+                .order_by(Post.date.desc()),
+                execution_options={"prebuffer_rows": True}
+            ).scalars().all()
+        else:
+            posts = db.session.execute(
+                select(Post)
+                .order_by(Post.date.desc())
+                .limit(num)
+                .offset((page - 1) * num),
+                execution_options={"prebuffer_rows": True}
+            ).scalars().all()
+    if not posts:
+        return {
+            "error":[
+                f"There are no post in the range of num:{num}, page: {page}."
+            ]
+
+
+        }
     return _posts_to_list(posts)
 
 
@@ -32,6 +47,14 @@ def get_post(id):
             select(Post)
             .where(Post.id == id)
         ).scalar()
+    if not post:
+        return {
+            "error":[
+                f"No post with the id: {id}."
+            ]
+
+
+        }
     return post.to_dict()
 
 
