@@ -17,6 +17,18 @@ class Post(db.Model):
 
     comments = relationship("Comment")
 
+    def to_dict(self):
+        result = {
+            "id": self.id,
+            "author": self.author,
+            "title": self.title,
+            "subtitle": self.subtitle,
+            "body": self.body,
+            "date": self.date,
+            "img_url": self.img_url,
+        }
+        return result
+
 class Comment(db.Model):
     __tablename__ = "comments"
 
