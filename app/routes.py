@@ -1,4 +1,6 @@
-from flask import Blueprint
+from flask import Blueprint, jsonify
+
+from . import control
 
 routes = Blueprint("routes", __name__)
 
@@ -10,7 +12,8 @@ def home():
 
 @routes.route("/get-posts")
 def get_posts():
-    return "get-posts"
+    posts = control.get_posts()
+    return jsonify(posts)
 
 
 @routes.route("/get-post")
