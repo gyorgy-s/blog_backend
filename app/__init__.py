@@ -26,7 +26,7 @@ def init_app():
     from .routes import routes
     app.register_blueprint(routes, url_prefix="/")
 
-    from . import models
+    from .models import Post, Comment
     with app.app_context():
         db.create_all()
 
