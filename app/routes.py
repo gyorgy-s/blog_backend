@@ -16,9 +16,10 @@ def get_posts():
     return jsonify(posts)
 
 
-@routes.route("/get-post")
-def get_post():
-    return "get-post"
+@routes.route("/get-post/<int:id>")
+def get_post(id):
+    post = control.get_post(id)
+    return jsonify(post)
 
 
 @routes.route("/get-posts-by-user")
