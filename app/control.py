@@ -1,5 +1,4 @@
 import datetime
-import json
 from sqlalchemy import select
 
 from . import app
@@ -24,13 +23,7 @@ def get_posts(num: int=0, page: int=1):
                 execution_options={"prebuffer_rows": True}
             ).scalars().all()
     if not posts:
-        return {
-            "error":[
-                f"There are no post in the range of num:{num}, page: {page}."
-            ]
-
-
-        }
+        return None
     return _posts_to_list(posts)
 
 
@@ -48,13 +41,7 @@ def get_post(id):
             .where(Post.id == id)
         ).scalar()
     if not post:
-        return {
-            "error":[
-                f"No post with the id: {id}."
-            ]
-
-
-        }
+        return None
     return post.to_dict()
 
 
