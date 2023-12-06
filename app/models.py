@@ -18,16 +18,33 @@ class Post(db.Model):
     comments = relationship("Comment")
 
     #TODO add comments
-    def to_dict(self):
-        result = {
-            "id": self.id,
-            "author": self.author,
-            "title": self.title,
-            "subtitle": self.subtitle,
-            "body": self.body,
-            "date": self.date,
-            "img_url": self.img_url,
-        }
+    def to_dict(self, comm: bool=False):
+        if comm:
+            comments = []
+            if self.comments:
+                for comment in self.comments:
+                    comments.append(comment.to_dict())
+            result = {
+                "id": self.id,
+                "author": self.author,
+                "title": self.title,
+                "subtitle": self.subtitle,
+                "body": self.body,
+                "date": self.date,
+                "img_url": self.img_url,
+                "comments": comments,
+            }
+        else:
+            result = {
+                "id": self.id,
+                "author": self.author,
+                "title": self.title,
+                "subtitle": self.subtitle,
+                "body": self.body,
+                "date": self.date,
+                "img_url": self.img_url,
+                "comments": [],
+            }
         return result
 
 class Comment(db.Model):
