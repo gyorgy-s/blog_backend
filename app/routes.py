@@ -14,6 +14,7 @@ def home():
 def get_posts():
     num = 0
     page = 1
+    comments = True
     try:
         if request.args.get("num"):
             num = int(request.args.get("num"))
@@ -21,10 +22,21 @@ def get_posts():
             page = int(request.args.get("page"))
     except ValueError:
         response = make_response({
-            "error": "Value given for 'num' or 'page' is not accepted."
+            "error": [
+                "Value given for 'num' or 'page' is not accepted."
+            ]
         }, 400)
+    try:
+        if request.args.get("comments"):
+            comments = bool(comments)
+    except ValueError:
+        response = make_response({
+            "error":[
+                "Value given for 'comments' is not accepted."
+            ]
+        })
     else:
-        posts = control.get_posts(num=num, page=page)
+        posts = control.get_posts(num=num, page=page, comments=comments)
         if not posts:
             response = make_response({
                 "error": [
