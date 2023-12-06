@@ -17,6 +17,7 @@ class Post(db.Model):
 
     comments = relationship("Comment")
 
+    #TODO add comments
     def to_dict(self):
         result = {
             "id": self.id,
@@ -38,3 +39,14 @@ class Comment(db.Model):
     author = mapped_column(String(100), nullable=False)
     body = mapped_column(String(250), nullable=False)
     date = mapped_column(DateTime, nullable=False)
+
+
+    def to_dict(self):
+        result = {
+            "id": self.id,
+            "post_id": self.post_id,
+            "author": self.author,
+            "body": self.body,
+            "date": self.date,
+        }
+        return result
