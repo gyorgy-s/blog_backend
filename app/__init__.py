@@ -15,4 +15,8 @@ def init_app():
         SQLALCHEMY_DATABAS_URI="sqlite:///blog.db"
     )
 
+    from .routes import routes
+
+    app.register_blueprint(routes, url_prefix="/")
+
     return app
