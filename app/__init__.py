@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
+app = Flask(__name__)
 db = SQLAlchemy()
 
 def get_app_key():
@@ -16,7 +17,6 @@ def get_db():
 
 
 def init_app():
-    app = Flask(__name__)
     app.config.update(
         SECRET_KEY=get_app_key(),
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{get_db()}"
