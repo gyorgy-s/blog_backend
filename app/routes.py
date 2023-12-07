@@ -1,4 +1,7 @@
 from flask import Blueprint, request, jsonify, make_response
+from werkzeug.exceptions import BadRequest
+from requests.exceptions import MissingSchema
+from sqlalchemy.exc import IntegrityError
 
 from . import control
 
@@ -10,118 +13,160 @@ def home():
     return "Home is where the heart is."
 
 
-@routes.route("/get-posts")
+@routes.route("/get-posts", methods=["GET"])
 def get_posts():
-    num = 0
-    page = 1
-    comments = True
-    try:
-        if request.args.get("num"):
-            num = int(request.args.get("num"))
-    except ValueError:
-        response = make_response({"error": ["Value given for 'num' is not accepted, expecting: int."]}, 400)
-    else:
-        try:
-            if request.args.get("page"):
-                page = int(request.args.get("page"))
-                if page < 1:
-                    page = 1
-        except ValueError:
-            response = make_response({"error": ["Value given for 'page' is not accepted, expecting: int."]}, 400)
-        else:
-            try:
-                if request.args.get("comments"):
-                    comments = control.validate_bool(request.args.get("comments"))
-            except ValueError:
-                response = make_response(
-                    {"error": ["Value given for 'comments' is not accepted, expecting: boolean."]}, 400
-                )
+    necessary = ["num", "page", "comments"]
+    errors = []
 
-            else:
-                posts = control.get_posts(num=num, page=page, comments=comments)
-                if not posts:
-                    response = make_response(
-                        {"error": [f"There are no post in the range of num:{num}, page: {page}."]}, 404
-                    )
-                else:
-                    response = make_response(jsonify(posts), 200)
-    return response
+    if not request.is_json:
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+    try:
+        req = request.get_json()
+    except BadRequest:
+        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+    for param in necessary:
+        if param not in req.keys():
+            errors.append(f"Missing param: '{param}'")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    if not isinstance(req["comments"], bool):
+        errors.append("'comments' must be boolean.")
+    if not isinstance(req["num"], int):
+        errors.append("'num' must be int.")
+    if not isinstance(req["page"], int):
+        errors.append("'page' must be int.")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    if not req["num"] >= 0:
+        errors.append(f"'num' must be >= 0")
+    if not req["page"] >= 1:
+        errors.append(f"'page' must be >= 1")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    posts = control.get_posts(num=req["num"], page=req["page"], comments=req["comments"])
+    if not posts:
+        if req["num"] != 0 and req["page"] != 1:
+            return make_response(
+                jsonify({"error": [f"There are no posts in the range of num: {req['num']}, page: {req['page']}"]}), 404
+            )
+        return make_response(jsonify({"error": [f"There are no posts."]}), 404)
+    return make_response(jsonify(posts), 200)
 
 
 @routes.route("/get-post")
 def get_post():
-    if not request.args.get("id"):
-        response = make_response({"error": ["Missing parameter 'id'."]}, 400)
-    else:
-        try:
-            id = int(request.args.get("id"))
-        except ValueError:
-            make_response({"error": ["Value given for 'id' is not accepted."]}, 400)
-        else:
-            post = control.get_post(id)
-            if not post:
-                response = make_response({"error": [f"There is no post with the 'id': {id}."]}, 404)
-            else:
-                response = make_response(jsonify(post), 200)
-    return response
+    if not request.is_json:
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+    try:
+        req = request.get_json()
+    except BadRequest:
+        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+    if "id" not in req.keys():
+        return make_response(jsonify({"error": ["Missing param: 'id'"]}), 400)
+    if not isinstance(req["id"], int):
+        return make_response(jsonify({"error": ["'id' must be int."]}), 400)
+    post = control.get_post(req["id"])
+    if not post:
+        return make_response(jsonify({"error": [f"There are no posts with the id of {req['id']}."]}), 404)
+    return make_response(jsonify(post), 200)
 
 
 @routes.route("/get-posts-by-user")
 def get_posts_by_user():
-    num = 0
-    page = 1
-    if not request.args.get("user"):
-        response = make_response({"error": ["Missing parameter 'user'."]}, 400)
-    else:
-        user = request.args.get("user")
-        try:
-            if request.args.get("num"):
-                num = int(request.args.get("num"))
-        except ValueError:
-            response = make_response({"error": ["Value given for 'num' is not accepted, expecting: int."]}, 400)
-        else:
-            try:
-                if request.args.get("page"):
-                    page = int(request.args.get("page"))
-                    if page < 1:
-                        page = 1
-            except ValueError:
-                response = make_response({"error": ["Value given for 'page' is not accepted, expecting: int."]}, 400)
-            else:
-                posts = control.get_posts_by_user(user=user, num=num, page=page)
-                if not posts:
-                    if page == 1:
-                        response = make_response({"error": [f"There is no post made by {user}."]}, 404)
-                    else:
-                        response = make_response(
-                            {"error": [f"There is no post made by {user} in the range of num:{num}, page: {page}."]},
-                            404,
-                        )
+    necessary = ["user", "num", "page"]
+    errors = []
 
-                else:
-                    response = make_response(jsonify(posts), 200)
-    return response
+    if not request.is_json:
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+    try:
+        req = request.get_json()
+    except BadRequest:
+        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+    for param in necessary:
+        if param not in req.keys():
+            errors.append(f"Missing param: '{param}'")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    if not isinstance(req["user"], str):
+        errors.append("'user' must be str.")
+    if not isinstance(req["num"], int):
+        errors.append("'num' must be int.")
+    if not isinstance(req["page"], int):
+        errors.append("'page' must be int.")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    req["user"] = req["user"].strip()
+    if not len(req["user"]) >= 2:
+        errors.append("'user' must be at least 2 characters.")
+    if not req["num"] >= 0:
+        errors.append("'num' must be >= 0")
+    if not req["page"] >= 1:
+        errors.append("'page' must be >= 1")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    posts = control.get_posts_by_user(user=req["user"], num=req["num"], page=req["page"])
+    if not posts:
+        if req["num"] != 0 and req["page"] != 1:
+            return make_response(
+                jsonify(
+                    {
+                        "error": [
+                            f"There is no post made by {req['user']} in the range of num: {req['num']}, page: {req['page']}"
+                        ]
+                    }
+                ),
+                404,
+            )
+        return make_response(jsonify({"error": [f"There is no post made by {req['user']}."]}), 404)
+    return make_response(jsonify(posts), 200)
 
 
 @routes.route("/contact", methods=["POST"])
 def contact():
-    name = request.args.get("name")
-    email = request.args.get("email")
-    message = request.args.get("message")
+    necessary = ["name", "email", "message"]
+    errors = []
 
-    if not name:
-        return make_response({"error": ["Missing param 'name'."]}, 400)
-    name = name.strip()
-    if not email:
-        return make_response({"error": ["Missing param 'email'."]}, 400)
-    email = email.strip()
-    if not message:
-        return make_response({"error": ["Missing param 'message'."]}, 400)
-    email = control.validate_email(email.strip())
-    if not email:
-        return make_response({"error": ["This is not a valid email address."]}, 400)
+    if not request.is_json:
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+    try:
+        req = request.get_json()
+    except BadRequest:
+        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+    for param in necessary:
+        if param not in req.keys():
+            errors.append(f"Missing param: '{param}'")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
 
-    control.send_contact_email(name=name, email=email, message=message)
+    if not isinstance(req["name"], str):
+        errors.append("'name' must be str.")
+    if not isinstance(req["email"], str):
+        errors.append("'email' must be str.")
+    if not isinstance(req["message"], str):
+        errors.append("'message' must be str.")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    req["name"] = req["name"].strip()
+    req["email"] = req["email"].strip()
+    req["message"] = req["message"].strip()
+
+    if not len(req["name"]) >= 2:
+        errors.append("'name' must be at least 2 characters.")
+    if not len(req["message"]) >= 2:
+        errors.append("'message' must be at least 2 characters.")
+    email = control.validate_email(req["email"].strip())
+    if not email:
+        errors.append("'email' is not a valid email address.")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+    control.send_contact_email(name=req["name"], email=email, message=req["message"])
 
     return make_response({"success": ["Email successfully sent."]})
 
