@@ -7,6 +7,30 @@ from . import db
 from .models import Post, Comment
 
 
+def validate_bool(param):
+    is_true = [
+        True,
+        1,
+        "true",
+        "True",
+        "t",
+        "T"
+    ]
+    is_false = [
+        False,
+        0,
+        "false",
+        "False",
+        "f",
+        "F"
+    ]
+    if param in is_false:
+        return False
+    elif param in is_true:
+        return True
+    else:
+        raise ValueError
+
 def get_posts(num: int=0, page: int=1, comments: bool=False):
     with app.app_context():
         if not num:
