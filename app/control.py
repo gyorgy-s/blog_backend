@@ -1,4 +1,7 @@
 import datetime
+
+import re
+
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
@@ -30,6 +33,15 @@ def validate_bool(param):
         return True
     else:
         raise ValueError
+
+
+def validate_email(email):
+    exp = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b')
+    email = re.fullmatch(exp, email)
+    if not email:
+        return None
+    return email.string
+
 
 def get_posts(num: int=0, page: int=1, comments: bool=False):
     with app.app_context():
