@@ -2,19 +2,31 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
+
 app = Flask(__name__)
 db = SQLAlchemy()
 
 def get_app_key():
     with open(os.path.join("", "app", ".config",  "app.key")) as f:
         key = f.readline().strip()
+    print("<SERVER><LOG> App key loaded.")
     return key
 
 def get_db():
     with open(os.path.join("", "app", ".config",  "db.key")) as f:
         db = f.readline().strip()
+    print("<SERVER><LOG> Db config loaded.")
     return db
 
+def get_email_config():
+    global EMAIL, EMAIL_KEY
+    with open(os.path.join("", "app", ".config",  "email.key")) as f:
+        email = f.readline().strip()
+        email_key = f. readline().strip()
+    print("<SERVER><LOG> Email config loaded.")
+    return email, email_key
+
+EMAIL, EMAIL_KEY = get_email_config()
 
 def init_app():
     app.config.update(
