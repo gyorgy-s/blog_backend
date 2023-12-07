@@ -2,11 +2,15 @@ import datetime
 
 import re
 
+import smtplib
+from email.message import EmailMessage
+
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from . import app
 from . import db
+from . import EMAIL, EMAIL_KEY, TO_EMAIL
 from .models import Post, Comment
 
 
@@ -122,6 +126,29 @@ def get_posts_by_user(user, num: int=0, page: int=1):
     if not posts:
         return None
     return _posts_to_list(posts=posts, comments=False)
+
+def send_contact_email(name, email, message):
+    msg = EmailMessage()
+    msg["Subject"] = "TEST Our Blog message"
+    msg["From"] = "me"
+    msg["To"] = "Our Blog"
+    msg.set_content(
+        f"""
+Dear Our Blog,
+
+you have received a mail from {name} {email} !
+
+"
+{message}
+"
+"""
+    )
+
+    # TODO the sending of the mail has been commented out, no email will be sent
+    # with smtplib.SMTP("smtp.gmail.com", port=587) as smtp:
+    #     smtp.starttls()
+    #     smtp.login(EMAIL, EMAIL_KEY)
+    #     smtp.sendmail(EMAIL, TO_EMAIL, msg.as_string())
 
 
 def add_post(
