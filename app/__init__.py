@@ -22,11 +22,12 @@ def get_email_config():
     global EMAIL, EMAIL_KEY
     with open(os.path.join("", "app", ".config",  "email.key")) as f:
         email = f.readline().strip()
-        email_key = f. readline().strip()
+        email_key = f.readline().strip()
+        to_email = f.readline().strip()
     print("<SERVER><LOG> Email config loaded.")
-    return email, email_key
+    return email, email_key, to_email
 
-EMAIL, EMAIL_KEY = get_email_config()
+EMAIL, EMAIL_KEY, TO_EMAIL = get_email_config()
 
 def init_app():
     app.config.update(
