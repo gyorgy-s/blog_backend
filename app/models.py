@@ -17,7 +17,7 @@ class Post(db.Model):
 
     comments = relationship("Comment")
 
-    #TODO add comments
+
     def to_dict(self, comm: bool=False):
         if comm:
             comments = []
