@@ -119,11 +119,11 @@ def contact():
         return make_response({"error": ["Missing param 'message'."]}, 400)
     email = control.validate_email(email.strip())
     if not email:
-        return make_response({"error":["This is not a valid email address."]}, 400)
+        return make_response({"error": ["This is not a valid email address."]}, 400)
 
     control.send_contact_email(name=name, email=email, message=message)
 
-    return make_response({"success":["Email successfully sent."]})
+    return make_response({"success": ["Email successfully sent."]})
 
 
 @routes.route("/about")
