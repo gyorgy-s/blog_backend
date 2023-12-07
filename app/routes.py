@@ -19,11 +19,11 @@ def get_posts():
     errors = []
 
     if not request.is_json:
-        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
     try:
         req = request.get_json()
     except BadRequest:
-        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+        return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
     for param in necessary:
         if param not in req.keys():
             errors.append(f"Missing param: '{param}'")
@@ -59,7 +59,7 @@ def get_posts():
 @routes.route("/get-post")
 def get_post():
     if not request.is_json:
-        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
     try:
         req = request.get_json()
     except BadRequest:
@@ -80,11 +80,11 @@ def get_posts_by_user():
     errors = []
 
     if not request.is_json:
-        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
     try:
         req = request.get_json()
     except BadRequest:
-        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+        return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
     for param in necessary:
         if param not in req.keys():
             errors.append(f"Missing param: '{param}'")
@@ -133,11 +133,11 @@ def contact():
     errors = []
 
     if not request.is_json:
-        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
     try:
         req = request.get_json()
     except BadRequest:
-        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+        return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
     for param in necessary:
         if param not in req.keys():
             errors.append(f"Missing param: '{param}'")
@@ -168,7 +168,7 @@ def contact():
         return make_response(jsonify({"error": errors}), 400)
     control.send_contact_email(name=req["name"], email=email, message=req["message"])
 
-    return make_response({"success": ["Email successfully sent."]})
+    return make_response({"success": ["Email successfully sent."]}, 200)
 
 
 @routes.route("/about")
@@ -238,12 +238,95 @@ def create_post():
     except IntegrityError as err:
         return make_response(jsonify({"error": err.args}))
 
-    return make_response(jsonify({"success": ["Post has been added sucessfully."]}))
+    return make_response(jsonify({"success": ["Post has been added sucessfully."]}), 200)
 
 
-@routes.route("/update-post")
+@routes.route("/update-post", methods=["GET", "PATCH"])
 def update_post():
-    return "update-post"
+    if request.method == "GET":
+        if not request.is_json:
+            return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
+        try:
+            req = request.get_json()
+        except BadRequest:
+            return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
+        if "id" not in req.keys():
+            return make_response(jsonify({"error": ["Missing param: 'id'"]}), 400)
+        if not isinstance(req["id"], int):
+            return make_response(jsonify({"error": ["'id' must be int."]}), 400)
+        post = control.get_post(req["id"])
+        if not post:
+            return make_response(jsonify({"error": [f"There are no posts with the id of {req['id']}."]}), 404)
+        return make_response(jsonify(post), 200)
+
+    if request.method == "PATCH":
+        necessary = ["id", "title", "subtitle", "body", "img_url"]
+        errors = []
+
+        if not request.is_json:
+            return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+        try:
+            req = request.get_json()
+        except BadRequest:
+            return make_response(jsonify({"error": ["Invalid JSON format."]}))
+        for param in necessary:
+            if param not in req.keys():
+                errors.append(f"Missing param: '{param}'")
+        if errors:
+            return make_response(jsonify({"error": errors}), 400)
+
+        if not isinstance(req["id"], int):
+            errors.append("'id' must be int.")
+        if not isinstance(req["title"], str):
+            errors.append("'title' must be str.")
+        if not isinstance(req["subtitle"], str):
+            errors.append("'subtitle' must be str.")
+        if not isinstance(req["body"], str):
+            errors.append("'body' must be str.")
+        print(req["img_url"])
+        if req["img_url"]:
+            if not isinstance(req["img_url"], str):
+                errors.append("'img_url' must be str.")
+        if errors:
+            return make_response(jsonify({"error": errors}), 400)
+
+        req["title"] = req["title"].strip()
+        req["subtitle"] = req["subtitle"].strip()
+        req["body"] = req["body"].strip()
+
+        if not len(req["title"]) >= 5:
+            errors.append("'title' must be at least 5 characters.")
+        if not len(req["subtitle"]) >= 5:
+            errors.append("'subtitle' must be at least 5 characters.")
+        if not len(req["body"]) >= 5:
+            errors.append("'body' must be at least 5 characters.")
+        if req["img_url"]:
+            req["img_url"] = req["img_url"].strip()
+            if not len(req["img_url"]) >= 2:
+                errors.append("'img_url' must be at least 2 characters.")
+            try:
+                if not control.validate_img_url(req["img_url"]):
+                    errors.append("'img_url' is not a valid url for an image.")
+            except MissingSchema:
+                errors.append("'img_url' is not a valid url.")
+
+        if errors:
+            return make_response(jsonify({"error": errors}), 400)
+
+        try:
+            control.update_post(
+                id=req["id"],
+                title=req["title"],
+                subtitle=req["subtitle"],
+                body=req["body"],
+                img_url=req["img_url"]
+            )
+        except IntegrityError as err:
+            return make_response(jsonify({"error": err.args}))
+
+        return make_response(jsonify({"success": ["Post has been updated sucessfully."]}), 200)
+
+
 
 
 @routes.route("/delete-post")
