@@ -5,6 +5,9 @@ import re
 import smtplib
 from email.message import EmailMessage
 
+import imghdr
+import requests
+
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
@@ -45,6 +48,10 @@ def validate_email(email):
     if not email:
         return None
     return email.string
+
+def validate_img_url(img_url):
+    img_type = imghdr.what("", requests.get(img_url, timeout=10).content)
+    return img_type
 
 
 def get_posts(num: int=0, page: int=1, comments: bool=False):
@@ -156,7 +163,7 @@ def add_post(
     title,
     subtitle,
     body,
-    img_url
+    img_url=None
 ):
     with app.app_context():
         post = Post(
