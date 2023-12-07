@@ -2,13 +2,15 @@ import datetime
 
 import re
 
+from html import escape
+
 import smtplib
 from email.message import EmailMessage
 
 import imghdr
 import requests
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload
 
 from . import app
@@ -175,4 +177,26 @@ def add_post(
             img_url=img_url
         )
         db.session.add(post)
+        db.session.commit()
+
+def update_post(
+        id:int,
+        title:str,
+        subtitle:str,
+        body:str,
+        img_url:str=None
+):
+    if img_url:
+        img_url = escape(img_url)
+    with app.app_context():
+        db.session.execute(
+            update(Post),[{
+                "id": id,
+                "title": escape(title),
+                "subtitle": escape(subtitle),
+                "body": escape(body),
+                "date":datetime.datetime.now(),
+                "img_url": img_url,
+            }]
+        )
         db.session.commit()
