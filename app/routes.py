@@ -176,9 +176,69 @@ def about():
     return "about"
 
 
-@routes.route("/create-post")
+@routes.route("/create-post", methods=["POST"])
 def create_post():
-    return "create-post"
+    necessary = ["author", "title", "subtitle", "body", "img_url"]
+    errors = []
+
+    if not request.is_json:
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+    try:
+        req = request.get_json()
+    except BadRequest:
+        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+    for param in necessary:
+        if param not in req.keys():
+            errors.append(f"Missing param: '{param}'")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    if not isinstance(req["author"], str):
+        errors.append("'author' must be str.")
+    if not isinstance(req["title"], str):
+        errors.append("'title' must be str.")
+    if not isinstance(req["subtitle"], str):
+        errors.append("'subtitle' must be str.")
+    if not isinstance(req["body"], str):
+        errors.append("'body' must be str.")
+    if not isinstance(req["img_url"], str):
+        errors.append("'img_url' must be str.")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    req["author"] = req["author"].strip()
+    req["title"] = req["title"].strip()
+    req["subtitle"] = req["subtitle"].strip()
+    req["body"] = req["body"].strip()
+    req["img_url"] = req["img_url"].strip()
+
+    if not len(req["author"]) >= 2:
+        errors.append("'author' must be at least 2 characters.")
+    if not len(req["title"]) >= 5:
+        errors.append("'title' must be at least 5 characters.")
+    if not len(req["subtitle"]) >= 5:
+        errors.append("'subtitle' must be at least 5 characters.")
+    if not len(req["body"]) >= 5:
+        errors.append("'body' must be at least 5 characters.")
+    if not len(req["img_url"]) >= 2:
+        errors.append("'img_url' must be at least 2 characters.")
+    try:
+        if not control.validate_img_url(req["img_url"]):
+            errors.append("'img_url' is not a valid url for an image.")
+    except MissingSchema:
+        errors.append("'img_url' is not a valid url.")
+
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    try:
+        control.add_post(
+            author=req["author"], title=req["title"], subtitle=req["subtitle"], body=req["body"], img_url=req["img_url"]
+        )
+    except IntegrityError as err:
+        return make_response(jsonify({"error": err.args}))
+
+    return make_response(jsonify({"success": ["Post has been added sucessfully."]}))
 
 
 @routes.route("/update-post")
