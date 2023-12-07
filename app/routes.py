@@ -90,19 +90,40 @@ def get_posts_by_user():
             else:
                 posts = control.get_posts_by_user(user=user, num=num, page=page)
                 if not posts:
-                    if page == 1 :
+                    if page == 1:
                         response = make_response({"error": [f"There is no post made by {user}."]}, 404)
                     else:
-                        response = make_response({"error": [f"There is no post made by {user} in the range of num:{num}, page: {page}."]}, 404)
+                        response = make_response(
+                            {"error": [f"There is no post made by {user} in the range of num:{num}, page: {page}."]},
+                            404,
+                        )
 
                 else:
                     response = make_response(jsonify(posts), 200)
     return response
 
 
-@routes.route("/contact")
+@routes.route("/contact", methods=["POST"])
 def contact():
-    return "contact"
+    name = request.args.get("name")
+    email = request.args.get("email")
+    message = request.args.get("message")
+
+    if not name:
+        return make_response({"error": ["Missing param 'name'."]}, 400)
+    name = name.strip()
+    if not email:
+        return make_response({"error": ["Missing param 'email'."]}, 400)
+    email = email.strip()
+    if not message:
+        return make_response({"error": ["Missing param 'message'."]}, 400)
+    email = control.validate_email(email.strip())
+    if not email:
+        return make_response({"error":["This is not a valid email address."]}, 400)
+
+    control.send_contact_email(name=name, email=email, message=message)
+
+    return make_response({"success":["Email successfully sent."]})
 
 
 @routes.route("/about")
