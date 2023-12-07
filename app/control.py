@@ -89,6 +89,29 @@ def get_post(id):
     return post.to_dict()
 
 
+def get_posts_by_user(user, num: int=0, page: int=1):
+    with app.app_context():
+        if not num:
+            posts = db.session.execute(
+                select(Post)
+                .where(Post.author == user)
+                .order_by(Post.date.desc()),
+                execution_options={"prebuffer_rows": True}
+            ).scalars()
+        else:
+            posts = db.session.execute(
+                select(Post)
+                .where(Post.author == user)
+                .order_by(Post.date.desc())
+                .limit(num)
+                .offset((page - 1) * num),
+                execution_options={"prebuffer_rows": True}
+            ).scalars()
+    if not posts:
+        return None
+    return _posts_to_list(posts=posts, comments=False)
+
+
 def add_post(
     author,
     title,
