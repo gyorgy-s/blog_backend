@@ -112,7 +112,7 @@ def get_post(id):
         ).scalar()
     if not post:
         return None
-    return post.to_dict()
+    return post.to_dict(comm=True)
 
 
 def get_posts_by_user(user, num: int=0, page: int=1):
