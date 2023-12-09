@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, make_response
 from werkzeug.exceptions import BadRequest
 from requests.exceptions import MissingSchema
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import UnmappedInstanceError
 
 from . import control
 
@@ -329,6 +330,21 @@ def update_post():
 
 
 
-@routes.route("/delete-post")
+@routes.route("/delete-post", methods=["DELETE"])
 def delete_post():
-    return "delete-post"
+    if request.method == "DELETE":
+        if not request.is_json:
+                return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
+        try:
+            req = request.get_json()
+        except BadRequest:
+            return make_response(jsonify({"error": ["Invalid JSON format."]}))
+        if "id" not in req.keys():
+            return make_response(jsonify({"error": ["Missing param: 'id'"]}), 400)
+        if not isinstance(req["id"], int):
+            return make_response(jsonify({"error": ["'id' must be int."]}), 400)
+        try:
+            control.delete_post(req["id"])
+        except UnmappedInstanceError:
+            return make_response(jsonify({"error":[f"There is no post with the 'id' of {req['id']}."]}))
+        return make_response(jsonify({"success": [f"Post with id: {req['id']} has been deleted sucessfully."]}), 200)
