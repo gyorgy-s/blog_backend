@@ -15,7 +15,7 @@ class Post(db.Model):
     date = mapped_column(DateTime(timezone=True), nullable=False)
     img_url = mapped_column(String(250), nullable=True)
 
-    comments = relationship("Comment")
+    comments = relationship("Comment", cascade="all, delete-orphan")
 
 
     def to_dict(self, comm: bool=False):
