@@ -200,3 +200,13 @@ def update_post(
             }]
         )
         db.session.commit()
+
+
+def delete_post(id):
+    with app.app_context():
+        to_delete = db.session.execute(
+            select(Post)
+            .where(Post.id == id)
+        ).scalar()
+        db.session.delete(to_delete)
+        db.session.commit()
