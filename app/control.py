@@ -51,6 +51,7 @@ def validate_email(email):
         return None
     return email.string
 
+
 def validate_img_url(img_url):
     img_type = imghdr.what("", requests.get(img_url, timeout=10).content)
     return img_type
@@ -137,6 +138,7 @@ def get_posts_by_user(user, num: int=0, page: int=1):
         return None
     return _posts_to_list(posts=posts, comments=False)
 
+
 def send_contact_email(name, email, message):
     msg = EmailMessage()
     msg["Subject"] = "TEST Our Blog message"
@@ -179,6 +181,7 @@ def add_post(
         )
         db.session.add(post)
         db.session.commit()
+
 
 def update_post(
         id:int,
@@ -236,4 +239,15 @@ def delete_comment(comment_id):
             .where(Comment.id == comment_id)
         ).scalar()
         db.session.delete(to_delete)
+        db.session.commit()
+
+
+def edit_comment(comment_id, body):
+    with app.app_context():
+        db.session.execute(
+            update(Comment),[{
+                "id": comment_id,
+                "body": escape(body)
+            }]
+        )
         db.session.commit()
