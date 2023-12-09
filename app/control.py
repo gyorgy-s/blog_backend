@@ -227,3 +227,13 @@ def add_comment(
         )
         db.session.add(comment)
         db.session.commit()
+
+
+def delete_comment(comment_id):
+    with app.app_context():
+        to_delete = db.session.execute(
+            select(Comment)
+            .where(Comment.id == comment_id)
+        ).scalar()
+        db.session.delete(to_delete)
+        db.session.commit()
