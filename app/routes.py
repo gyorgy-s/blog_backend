@@ -284,7 +284,6 @@ def update_post():
             errors.append("'subtitle' must be str.")
         if not isinstance(req["body"], str):
             errors.append("'body' must be str.")
-        print(req["img_url"])
         if req["img_url"]:
             if not isinstance(req["img_url"], str):
                 errors.append("'img_url' must be str.")
@@ -407,3 +406,41 @@ def delete_comment():
     except SQLAlchemyError as err:
         return make_response(jsonify({"error": err.args}))
     return make_response(jsonify({"success": "Comment deleted successfully."}), 200)
+
+
+@routes.route("/edit-comment", methods=["PATCH"])
+def edit_comment():
+    necessary = ["comment_id", "body"]
+    errors = []
+
+    if not request.is_json:
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
+    try:
+        req = request.get_json()
+    except BadRequest:
+        return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
+    for param in necessary:
+        if param not in req.keys():
+            errors.append(f"Missing param: '{param}'")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    if not isinstance(req["comment_id"], int):
+        errors.append("'comment_id' must be int.")
+    if not isinstance(req["body"], str):
+        errors.append("'body' must be str.")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    req["body"] = req["body"].strip()
+
+    if not len(req["body"]) >= 1:
+        errors.append("'body' must be at least 1 characters.")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    try:
+        control.edit_comment(comment_id=req["comment_id"], body=req["body"])
+    except SQLAlchemyError as err:
+        return make_response(jsonify({"error": err.args}), 404)
+    return make_response(jsonify({"success": "Comment edited successfully."}), 200)
