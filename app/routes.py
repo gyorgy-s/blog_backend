@@ -328,8 +328,6 @@ def update_post():
         return make_response(jsonify({"success": ["Post has been updated sucessfully."]}), 200)
 
 
-
-
 @routes.route("/delete-post", methods=["DELETE"])
 def delete_post():
     if request.method == "DELETE":
@@ -348,3 +346,43 @@ def delete_post():
         except UnmappedInstanceError:
             return make_response(jsonify({"error":[f"There is no post with the 'id' of {req['id']}."]}))
         return make_response(jsonify({"success": [f"Post with id: {req['id']} has been deleted sucessfully."]}), 200)
+
+
+@routes.route("/add-comment", methods=["POST"])
+def add_comment():
+    necessary = ["author", "body", "post_id"]
+    errors = []
+
+    if not request.is_json:
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+    try:
+        req = request.get_json()
+    except BadRequest:
+        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+    for param in necessary:
+        if param not in req.keys():
+            errors.append(f"Missing param: '{param}'")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    if not isinstance(req["author"], str):
+        errors.append("'author' must be str.")
+    if not isinstance(req["body"], str):
+        errors.append("'body' must be str.")
+    if not isinstance(req["post_id"], int):
+        errors.append("'post_id' must be int.")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    req["author"] = req["author"].strip()
+    req["body"] = req["body"].strip()
+
+    if not len(req["author"]) >= 2:
+        errors.append("'author' must be at least 2 characters.")
+    if not len(req["body"]) >= 1:
+        errors.append("'body' must be at least 1 characters.")
+    if errors:
+        return make_response(jsonify({"error": errors}), 400)
+
+    control.add_comment(req["author"], req["body"], req["post_id"])
+    return make_response(jsonify({"success": "Comment added successfully."}))
