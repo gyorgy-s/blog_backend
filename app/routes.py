@@ -385,4 +385,4 @@ def add_comment():
         return make_response(jsonify({"error": errors}), 400)
 
     control.add_comment(req["author"], req["body"], req["post_id"])
-    return make_response(jsonify({"success": "Comment added successfully."}))
+    return make_response(jsonify({"success": "Comment added successfully."}), 200)
