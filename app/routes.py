@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, make_response
 from werkzeug.exceptions import BadRequest
 from requests.exceptions import MissingSchema
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm.exc import UnmappedInstanceError
 
 from . import control
@@ -330,22 +330,21 @@ def update_post():
 
 @routes.route("/delete-post", methods=["DELETE"])
 def delete_post():
-    if request.method == "DELETE":
-        if not request.is_json:
-                return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
-        try:
-            req = request.get_json()
-        except BadRequest:
-            return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
-        if "id" not in req.keys():
-            return make_response(jsonify({"error": ["Missing param: 'id'"]}), 400)
-        if not isinstance(req["id"], int):
-            return make_response(jsonify({"error": ["'id' must be int."]}), 400)
-        try:
-            control.delete_post(req["id"])
-        except UnmappedInstanceError:
-            return make_response(jsonify({"error":[f"There is no post with the 'id' of {req['id']}."]}), 404)
-        return make_response(jsonify({"success": [f"Post with id: {req['id']} has been deleted sucessfully."]}), 200)
+    if not request.is_json:
+            return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
+    try:
+        req = request.get_json()
+    except BadRequest:
+        return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
+    if "id" not in req.keys():
+        return make_response(jsonify({"error": ["Missing param: 'id'"]}), 400)
+    if not isinstance(req["id"], int):
+        return make_response(jsonify({"error": ["'id' must be int."]}), 400)
+    try:
+        control.delete_post(req["id"])
+    except UnmappedInstanceError:
+        return make_response(jsonify({"error":[f"There is no post with the 'id' of {req['id']}."]}), 404)
+    return make_response(jsonify({"success": [f"Post with id: {req['id']} has been deleted sucessfully."]}), 200)
 
 
 @routes.route("/add-comment", methods=["POST"])
@@ -383,6 +382,28 @@ def add_comment():
         errors.append("'body' must be at least 1 characters.")
     if errors:
         return make_response(jsonify({"error": errors}), 400)
-
-    control.add_comment(req["author"], req["body"], req["post_id"])
+    try:
+        control.add_comment(req["author"], req["body"], req["post_id"])
+    except SQLAlchemyError as err:
+        return make_response(jsonify({"error": err.args}))
     return make_response(jsonify({"success": "Comment added successfully."}), 200)
+
+
+@routes.route("/delete-comment", methods=["DELETE"])
+def delete_comment():
+    if not request.is_json:
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
+    try:
+        req = request.get_json()
+    except BadRequest:
+        return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
+    if "comment_id" not in req.keys():
+        return make_response(jsonify({"error": ["Missing param: 'comment_id'"]}), 400)
+
+    if not isinstance(req["comment_id"], int):
+        return make_response(jsonify({"error": "'comment_id' must be int."}), 400)
+    try:
+        control.delete_comment(req["comment_id"])
+    except SQLAlchemyError as err:
+        return make_response(jsonify({"error": err.args}))
+    return make_response(jsonify({"success": "Comment deleted successfully."}), 200)
