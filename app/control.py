@@ -102,6 +102,7 @@ def _posts_to_list(posts: Post, comments: bool=False):
     return result
 
 
+#TODO decision, body {{img}} tag handling in backed or frontend
 def get_post(id):
     with app.app_context():
         post = db.session.execute(
@@ -209,4 +210,20 @@ def delete_post(id):
             .where(Post.id == id)
         ).scalar()
         db.session.delete(to_delete)
+        db.session.commit()
+
+
+def add_comment(
+        author:str,
+        body:str,
+        post_id:int
+):
+    with app.app_context():
+        comment = Comment(
+            post_id=post_id,
+            author=escape(author),
+            body=escape(body),
+            date=datetime.datetime.now()
+        )
+        db.session.add(comment)
         db.session.commit()
