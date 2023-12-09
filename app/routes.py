@@ -53,7 +53,7 @@ def get_posts():
             return make_response(
                 jsonify({"error": [f"There are no posts in the range of num: {req['num']}, page: {req['page']}"]}), 404
             )
-        return make_response(jsonify({"error": [f"There are no posts."]}), 404)
+        return make_response(jsonify({"error": ["There are no posts."]}), 404)
     return make_response(jsonify(posts), 200)
 
 
@@ -64,7 +64,7 @@ def get_post():
     try:
         req = request.get_json()
     except BadRequest:
-        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+        return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
     if "id" not in req.keys():
         return make_response(jsonify({"error": ["Missing param: 'id'"]}), 400)
     if not isinstance(req["id"], int):
@@ -183,11 +183,11 @@ def create_post():
     errors = []
 
     if not request.is_json:
-        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
     try:
         req = request.get_json()
     except BadRequest:
-        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+        return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
     for param in necessary:
         if param not in req.keys():
             errors.append(f"Missing param: '{param}'")
@@ -265,11 +265,11 @@ def update_post():
         errors = []
 
         if not request.is_json:
-            return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+            return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
         try:
             req = request.get_json()
         except BadRequest:
-            return make_response(jsonify({"error": ["Invalid JSON format."]}))
+            return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
         for param in necessary:
             if param not in req.keys():
                 errors.append(f"Missing param: '{param}'")
@@ -336,7 +336,7 @@ def delete_post():
         try:
             req = request.get_json()
         except BadRequest:
-            return make_response(jsonify({"error": ["Invalid JSON format."]}))
+            return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
         if "id" not in req.keys():
             return make_response(jsonify({"error": ["Missing param: 'id'"]}), 400)
         if not isinstance(req["id"], int):
@@ -344,7 +344,7 @@ def delete_post():
         try:
             control.delete_post(req["id"])
         except UnmappedInstanceError:
-            return make_response(jsonify({"error":[f"There is no post with the 'id' of {req['id']}."]}))
+            return make_response(jsonify({"error":[f"There is no post with the 'id' of {req['id']}."]}), 404)
         return make_response(jsonify({"success": [f"Post with id: {req['id']} has been deleted sucessfully."]}), 200)
 
 
@@ -354,11 +354,11 @@ def add_comment():
     errors = []
 
     if not request.is_json:
-        return make_response(jsonify({"error": ["Request must be in JSON format."]}))
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
     try:
         req = request.get_json()
     except BadRequest:
-        return make_response(jsonify({"error": ["Invalid JSON format."]}))
+        return make_response(jsonify({"error": ["Invalid JSON format."]}), 400)
     for param in necessary:
         if param not in req.keys():
             errors.append(f"Missing param: '{param}'")
