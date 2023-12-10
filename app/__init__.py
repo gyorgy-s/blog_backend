@@ -19,7 +19,6 @@ def get_db():
     return db
 
 def get_email_config():
-    global EMAIL, EMAIL_KEY
     with open(os.path.join("", "app", ".config",  "email.key")) as f:
         email = f.readline().strip()
         email_key = f.readline().strip()
@@ -39,7 +38,6 @@ def init_app():
     from .routes import routes
     app.register_blueprint(routes, url_prefix="/")
 
-    from .models import Post, Comment
     with app.app_context():
         db.create_all()
 
