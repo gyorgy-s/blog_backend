@@ -41,9 +41,9 @@ def get_posts():
         return make_response(jsonify({"error": errors}), 400)
 
     if not req["num"] >= 0:
-        errors.append(f"'num' must be >= 0")
+        errors.append("'num' must be >= 0")
     if not req["page"] >= 1:
-        errors.append(f"'page' must be >= 1")
+        errors.append("'page' must be >= 1")
     if errors:
         return make_response(jsonify({"error": errors}), 400)
 
@@ -330,7 +330,7 @@ def update_post():
 @routes.route("/delete-post", methods=["DELETE"])
 def delete_post():
     if not request.is_json:
-            return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
+        return make_response(jsonify({"error": ["Request must be in JSON format."]}), 400)
     try:
         req = request.get_json()
     except BadRequest:
