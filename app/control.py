@@ -1,3 +1,9 @@
+"""
+Module to interact with the db of the for the blog app.
+Contains the implementation of the CRUD for the models,
+and helper functions for validation and sending an email.
+Format and data validation is handled in the routes module.
+"""
 import datetime
 
 import re
@@ -20,6 +26,9 @@ from .models import Post, Comment
 
 
 def validate_bool(param):
+    """Check if the given param is in the specified list of acceptable values for True or False.
+    Returns bool according the evaluation of the param.
+    Raises ValueError if the given param is not in the accepted lists."""
     is_true = [
         True,
         1,
@@ -45,6 +54,8 @@ def validate_bool(param):
 
 
 def validate_email(email):
+    """Check if the given email corresponds to the regex specified as a valid email format.
+    Returns the email address or None if not a valid email address."""
     exp = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b')
     email = re.fullmatch(exp, email)
     if not email:
@@ -53,11 +64,19 @@ def validate_email(email):
 
 
 def validate_img_url(img_url):
+    """Check if the given url corresponds to an image.
+    Returns the type of the image if any, None if not an image.
+    Raises MissingSchema if the given url is not a valid url format."""
     img_type = imghdr.what("", requests.get(img_url, timeout=10).content)
     return img_type
 
 
 def get_posts(num: int=0, page: int=1, comments: bool=False):
+    """Get the posts from the db, depending on the given args as a list.
+    num: the desired number of post to retrieve (if 0, get all posts). (>=0)
+    page: pagination for the set of posts (if num not 0). Gives the offset for the querry. (>=1)
+    comment: determines if the comments should be loaded for the posts, as a list.
+    Returns a list of post object representet as a dict or none if there are no posts."""
     with app.app_context():
         if not num:
             if not comments:
@@ -97,6 +116,8 @@ def get_posts(num: int=0, page: int=1, comments: bool=False):
 
 
 def _posts_to_list(posts: Post, comments: bool=False):
+    """Helper to convert an iterable set of Post objects to a dict and collect them in a list.
+    Returns a list of dict, empty list if there are no Posts."""
     result = []
     for post in posts:
         result.append(post.to_dict(comments))
@@ -105,6 +126,9 @@ def _posts_to_list(posts: Post, comments: bool=False):
 
 #TODO decision, body {{img}} tag handling in backed or frontend
 def get_post(id):
+    """Get a single post from the db based on the id.
+    When getting a specific post, the comments are loaded automatically.
+    Returns a dict or None if there is no post by the given id."""
     with app.app_context():
         post = db.session.execute(
             select(Post)
@@ -117,6 +141,10 @@ def get_post(id):
 
 
 def get_posts_by_user(user, num: int=0, page: int=1):
+    """Get all posts made by a specif user as a list.
+    num: the desired number of post to retrieve (if 0, get all posts). (>=0)
+    page: pagination for the set of posts (if num not 0). Gives the offset for the querry. (>=1)
+    Returns a list of post object representet as a dict or none if there are no posts."""
     with app.app_context():
         if not num:
             posts = db.session.execute(
@@ -140,6 +168,7 @@ def get_posts_by_user(user, num: int=0, page: int=1):
 
 
 def send_contact_email(name, email, message):
+    """Send an email to according to the email config, with the given contents."""
     msg = EmailMessage()
     msg["Subject"] = "TEST Our Blog message"
     msg["From"] = "me"
@@ -170,6 +199,8 @@ def add_post(
     body,
     img_url=None
 ):
+    """Create a new record for a post in the db, with the given params.
+    Date is determined by the time of execution."""
     with app.app_context():
         post = Post(
             author=author,
@@ -190,6 +221,8 @@ def update_post(
         body:str,
         img_url:str=None
 ):
+    """Update an existing post with the given params based on the id.
+    Date is updated to the time of execution."""
     if img_url:
         img_url = escape(img_url)
     with app.app_context():
@@ -207,6 +240,7 @@ def update_post(
 
 
 def delete_post(id):
+    """Delete a post from the db based on id."""
     with app.app_context():
         to_delete = db.session.execute(
             select(Post)
@@ -221,6 +255,8 @@ def add_comment(
         body:str,
         post_id:int
 ):
+    """Create a new record for a comment in the db, with the given params.
+    Date is determined by the time of execution."""
     with app.app_context():
         comment = Comment(
             post_id=post_id,
@@ -233,6 +269,7 @@ def add_comment(
 
 
 def delete_comment(comment_id):
+    """Delete a comment from the db based on id."""
     with app.app_context():
         to_delete = db.session.execute(
             select(Comment)
@@ -243,11 +280,14 @@ def delete_comment(comment_id):
 
 
 def edit_comment(comment_id, body):
+    """Update an existing comment with the given params based on the id.
+    Date is updated to the time of execution."""
     with app.app_context():
         db.session.execute(
             update(Comment),[{
                 "id": comment_id,
-                "body": escape(body)
+                "body": escape(body),
+                "date":datetime.datetime.now()
             }]
         )
         db.session.commit()

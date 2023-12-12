@@ -1,9 +1,16 @@
+"""
+Module for the db models of the blog app.
+Define the db tables and relations within to store the blog posts and comments.
+"""
 from sqlalchemy import Integer, String, DateTime
 from sqlalchemy.orm import mapped_column, relationship
 from sqlalchemy.schema import ForeignKey
+
 from . import db
 
+
 class Post(db.Model):
+    """Db table for posts. Defines the desired columns of the table and relations."""
     __tablename__ = "posts"
 
     id = mapped_column(Integer, primary_key=True, unique=True)
@@ -19,6 +26,9 @@ class Post(db.Model):
 
 
     def to_dict(self, comm: bool=False):
+        """Convert a Post object to a dict for representation.
+        If 'comm' param is True the dict will contain all the comments
+        belonging to the post in a [{},{}] format."""
         if comm:
             comments = []
             if self.comments:
@@ -48,6 +58,7 @@ class Post(db.Model):
         return result
 
 class Comment(db.Model):
+    """Db table for comments. Defines the desired columns of the table and relations."""
     __tablename__ = "comments"
 
     id = mapped_column(Integer, primary_key=True, unique=True)
@@ -59,6 +70,7 @@ class Comment(db.Model):
 
 
     def to_dict(self):
+        """Convert Comment object to a dict for representation."""
         result = {
             "id": self.id,
             "post_id": self.post_id,
